@@ -44,7 +44,8 @@ export function generateStatsSVG(
   
   const border = hideBorder ? 0 : 1;
   const borderRadius = 6;
-  const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
+  // Use single quotes in SVG attribute to avoid conflicts
+  const fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif";
 
   // Icons as SVG paths
   const icons: { [key: string]: string } = {
@@ -65,7 +66,7 @@ export function generateStatsSVG(
   </defs>
   <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
   <g data-testid="card-title" transform="translate(25, 30)">
-    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${escapeXml(title || 'GitHub Stats')}</text>
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family='${fontFamily}' font-size="20" font-weight="600">${escapeXml(title || 'GitHub Stats')}</text>
   </g>
   <g transform="translate(0, 60)">`;
 
@@ -84,8 +85,8 @@ export function generateStatsSVG(
     svg += `
     <g transform="translate(0, ${y})">
       <path d="${iconPath}" fill="${colors.icon || colors.title}" transform="translate(${iconX}, ${iconTransformY}) scale(0.8)"/>
-      <text x="${labelX}" y="${labelY}" class="stat-label" fill="${colors.text}" font-family="${fontFamily}" font-size="14">${escapeXml(stat.label)}</text>
-      <text x="${valueX}" y="${valueY}" class="stat-value" fill="${colors.title}" font-family="${fontFamily}" font-size="14" text-anchor="end">${escapeXml(stat.value)}</text>
+      <text x="${labelX}" y="${labelY}" class="stat-label" fill="${colors.text}" font-family='${fontFamily}' font-size="14">${escapeXml(stat.label)}</text>
+      <text x="${valueX}" y="${valueY}" class="stat-value" fill="${colors.title}" font-family='${fontFamily}' font-size="14" text-anchor="end">${escapeXml(stat.value)}</text>
     </g>`;
   });
 
