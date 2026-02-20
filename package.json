@@ -6,8 +6,6 @@
   "main": "api/index.js",
   "scripts": {
     "dev": "vercel dev",
-    "build": "tsc",
-    "start": "node api/index.js",
     "type-check": "tsc --noEmit"
   },
   "keywords": [
