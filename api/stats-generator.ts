@@ -59,13 +59,13 @@ export function generateStatsSVG(
   const normalizedTheme = (theme || 'default').toLowerCase().trim();
   const colors: Theme = themes[normalizedTheme] || themes.default;
   const width = cardWidth || 495;
-  
-  // Compact layout
-  const titleHeight = 35;
-  const itemHeight = 28; // Reduced from 50
-  const bottomPadding = 20; // Reduced from 30
+
+  // Compact layout (similar height to original github-readme-stats card)
+  const titleHeight = 30;
+  const itemHeight = 22;
+  const bottomPadding = 12;
   const statsHeight = stats.length * itemHeight;
-  const contentHeight = Math.max(statsHeight, 120); // Minimum height for grade circle
+  const contentHeight = Math.max(statsHeight, 96);
   const height = titleHeight + contentHeight + bottomPadding;
   
   const border = hideBorder ? 0 : 1;
@@ -82,10 +82,10 @@ export function generateStatsSVG(
   };
 
   const grade = calculateGrade(stats);
-  const gradeCircleSize = 80;
-  const gradeCircleX = width - gradeCircleSize - 25;
-  const gradeCircleY = titleHeight + (contentHeight / 2);
-  const statsSectionWidth = gradeCircleX - 50;
+  const gradeCircleSize = 64;
+  const gradeCircleX = width - gradeCircleSize - 24;
+  const gradeCircleY = titleHeight + contentHeight / 2;
+  const statsSectionWidth = gradeCircleX - 40;
 
   let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -97,8 +97,8 @@ export function generateStatsSVG(
     </style>
   </defs>
   <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
-  <g data-testid="card-title" transform="translate(25, 25)">
-    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="18" font-weight="600">${escapeXml(title || 'GitHub Stats')}</text>
+  <g data-testid="card-title" transform="translate(25, 24)">
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="16" font-weight="600">${escapeXml(title || 'GitHub Stats')}</text>
   </g>
   <g transform="translate(0, ${titleHeight + 5})">`;
 
@@ -106,11 +106,11 @@ export function generateStatsSVG(
   stats.forEach((stat, index) => {
     const y = index * itemHeight;
     const iconPath = icons[stat.icon] || icons.stars;
-    const iconSize = 16; // Smaller icons
-    const iconX = 25;
+    const iconSize = 14;
+    const iconX = 24;
     const iconY = y + 12;
     const labelX = 48;
-    const labelY = y + 16;
+    const labelY = y + 14;
     const valueX = statsSectionWidth;
     const valueY = y + 16;
 
