@@ -1,0 +1,27 @@
+    {
+  "name": "github-top-languages",
+  "author": "Bojan Jagetic <jagetic.bojan@gmail.com>",
+  "version": "1.0.0",
+  "description": "Dynamically generated GitHub top languages card for your GitHub README",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/index.js"
+  },
+  "keywords": [
+    "github",
+    "readme",
+    "stats",
+    "languages",
+    "svg"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/node": "^3.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}
+
