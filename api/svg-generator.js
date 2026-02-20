@@ -2,38 +2,60 @@ const LANGUAGE_COLORS = require('./language-colors');
 const THEMES = require('./themes');
 
 function generateSVG(languages, theme, hideBorder, title, cardWidth) {
-    const colors = THEMES[theme] || THEMES.default;
-    const width = cardWidth || 495;
-    const height = Math.max(200, 45 + languages.length * 25);
-    const border = hideBorder ? 0 : 1;
+  // Normalize theme name and validate
+  const normalizedTheme = (theme || 'default').toLowerCase().trim();
+  const colors = THEMES[normalizedTheme] || THEMES.default;
+  const width = cardWidth || 495;
   
-    let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="4.5" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
-    <g data-testid="card-title" transform="translate(25, 35)">
-      <text x="0" y="0" class="title" fill="${colors.title}" font-family="Segoe UI, Verdana, sans-serif" font-size="18" font-weight="bold">${title || 'Top Languages'}</text>
-    </g>
-    <g transform="translate(0, 55)">`;
+  // Improved height calculation with proper padding
+  const titleHeight = 50;
+  const itemHeight = 35; // Increased spacing between items
+  const bottomPadding = 30; // Extra padding at bottom to prevent clipping
+  const height = titleHeight + (languages.length * itemHeight) + bottomPadding;
   
-    languages.forEach((lang, index) => {
-      const y = index * 25;
-      const color = LANGUAGE_COLORS[lang.name] || '#858585';
-      const percent = parseFloat(lang.percent);
-      const barWidth = ((width - 50) * percent) / 100;
+  const border = hideBorder ? 0 : 1;
+  const borderRadius = 6;
   
-      svg += `
-      <g transform="translate(25, ${y})">
-        <text x="0" y="15" fill="${colors.text}" font-family="Segoe UI, Verdana, sans-serif" font-size="12">${lang.name}</text>
-        <text x="${width - 50}" y="15" fill="${colors.text}" font-family="Segoe UI, Verdana, sans-serif" font-size="12" text-anchor="end">${lang.percent}%</text>
-        <rect x="0" y="20" width="${width - 50}" height="8" rx="4" fill="${colors.border}" opacity="0.2"/>
-        <rect x="0" y="20" width="${barWidth}" height="8" rx="4" fill="${color}"/>
-      </g>`;
-    });
-  
-    svg += `
-    </g>
-  </svg>`;
-  
-    return svg;
-  }
+  // Modern font stack
+  const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 
-  module.exports = generateSVG;
+  let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-weight: 600; }
+      .lang-name { font-weight: 500; }
+      .lang-percent { font-weight: 400; }
+    </style>
+  </defs>
+  <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
+  <g data-testid="card-title" transform="translate(25, 30)">
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${title || 'Top Languages'}</text>
+  </g>
+  <g transform="translate(0, 60)">`;
+
+  languages.forEach((lang, index) => {
+    const y = index * itemHeight;
+    const color = LANGUAGE_COLORS[lang.name] || '#858585';
+    const percent = parseFloat(lang.percent);
+    const barWidth = ((width - 50) * percent) / 100;
+    const barHeight = 10;
+    const barY = 22;
+    const textY = 16;
+
+    svg += `
+    <g transform="translate(25, ${y})">
+      <text x="0" y="${textY}" class="lang-name" fill="${colors.text}" font-family="${fontFamily}" font-size="13">${lang.name}</text>
+      <text x="${width - 50}" y="${textY}" class="lang-percent" fill="${colors.text}" font-family="${fontFamily}" font-size="13" text-anchor="end">${lang.percent}%</text>
+      <rect x="0" y="${barY}" width="${width - 50}" height="${barHeight}" rx="5" fill="${colors.border}" opacity="0.15"/>
+      <rect x="0" y="${barY}" width="${barWidth}" height="${barHeight}" rx="5" fill="${color}"/>
+    </g>`;
+  });
+
+  svg += `
+  </g>
+</svg>`;
+
+  return svg;
+}
+
+module.exports = generateSVG;

@@ -1,10 +1,11 @@
-# GitHub Top Languages
+# GitHub Top Languages & Stats
 
-Dynamically generated GitHub top languages card for your GitHub README. Hosted on Vercel and customizable with your own domain.
+Dynamically generated GitHub cards for your GitHub README. Hosted on Vercel and customizable with your own domain.
 
 ## 🚀 Features
 
-- 📊 Shows top languages from your public repositories
+- 📊 **Top Languages** - Shows top languages from your public repositories
+- 📈 **GitHub Stats** - Displays useful GitHub statistics (stars, commits, PRs, issues, contributions)
 - 🎨 Multiple beautiful themes
 - 🔒 Only public repositories are analyzed
 - ⚡ Fast and cached responses
@@ -12,42 +13,86 @@ Dynamically generated GitHub top languages card for your GitHub README. Hosted o
 
 ## 📖 Usage
 
-### Basic Usage
+### Top Languages Card
 
-Add this to your README:
+#### SVG (for README)
 
 ```markdown
-![Top Languages](https://your-domain.vercel.app/api?username=YOUR_USERNAME)
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME)
 ```
 
-### With Custom Theme
+#### HTML (with Umami tracking)
 
 ```markdown
-![Top Languages](https://your-domain.vercel.app/api?username=YOUR_USERNAME&theme=dark)
+[View Top Languages](https://github-top-languages-sepia.vercel.app/api/lang.html?username=YOUR_USERNAME)
+```
+
+#### With Custom Theme
+
+```markdown
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME&theme=dark)
+```
+
+### GitHub Stats Card
+
+#### SVG (for README)
+
+```markdown
+![GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats?username=YOUR_USERNAME)
+```
+
+#### HTML (with Umami tracking)
+
+```markdown
+[View GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats.html?username=YOUR_USERNAME)
+```
+
+#### With Custom Theme
+
+```markdown
+![GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats?username=YOUR_USERNAME&theme=radical)
 ```
 
 ### Available Parameters
 
+Both endpoints support:
 - `username` (required) - GitHub username
 - `theme` (optional) - Theme name (default, dark, radical, merko, gruvbox, tokyonight, onedark, cobalt, synthwave)
 - `hide_border` (optional) - Hide card border (true/false)
-- `title` (optional) - Custom title (default: "Top Languages")
+- `title` (optional) - Custom title
+  - Languages: default "Top Languages"
+  - Stats: default "{username}'s GitHub Stats"
 - `card_width` (optional) - Card width in pixels (default: 495)
 
 ### Examples
 
+#### Top Languages
+
 ```markdown
 <!-- Default theme -->
-![Top Languages](https://your-domain.vercel.app/api?username=anuraghazra)
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME)
 
 <!-- Dark theme -->
-![Top Languages](https://your-domain.vercel.app/api?username=anuraghazra&theme=dark)
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME&theme=dark)
 
 <!-- Custom title -->
-![Top Languages](https://your-domain.vercel.app/api?username=anuraghazra&title=My%20Languages)
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME&title=My%20Languages)
 
 <!-- Hide border -->
-![Top Languages](https://your-domain.vercel.app/api?username=anuraghazra&hide_border=true)
+![Top Languages](https://github-top-languages-sepia.vercel.app/api/lang?username=YOUR_USERNAME&hide_border=true)
+```
+
+#### GitHub Stats
+
+```markdown
+<!-- Default theme -->
+![GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats?username=YOUR_USERNAME)
+
+<!-- Radical theme -->
+![GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats?username=YOUR_USERNAME&theme=radical)
+
+<!-- Custom title -->
+![GitHub Stats](https://github-top-languages-sepia.vercel.app/api/stats?username=YOUR_USERNAME&title=My%20Stats)
 ```
 
 ## 🛠️ Deployment
@@ -77,6 +122,12 @@ For higher rate limits and access to more repositories:
 2. Generate a new token (classic)
 3. Select scopes: `repo` and `read:user`
 4. Add the token as environment variable `PAT_1` or `GITHUB_TOKEN` in Vercel
+
+## 📊 Analytics & Tracking
+
+The HTML endpoints (`/api/lang.html` and `/api/stats.html`) include Umami tracking for analytics. The tracking script is automatically included in the HTML wrapper.
+
+**Note:** SVG endpoints (`/api/lang` and `/api/stats`) do not include tracking as they are pure SVG images designed for embedding in README files.
 
 ## 🎨 Available Themes
 
