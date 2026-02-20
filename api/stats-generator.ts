@@ -13,6 +13,19 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
 export function generateStatsSVG(
   stats: Stat[],
   theme: string | undefined,
@@ -52,7 +65,7 @@ export function generateStatsSVG(
   </defs>
   <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
   <g data-testid="card-title" transform="translate(25, 30)">
-    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${title || 'GitHub Stats'}</text>
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${escapeXml(title || 'GitHub Stats')}</text>
   </g>
   <g transform="translate(0, 60)">`;
 
@@ -67,11 +80,12 @@ export function generateStatsSVG(
     const valueX = width - 25;
     const valueY = y + 20;
 
+    const iconTransformY = Math.round(iconY - iconSize / 2);
     svg += `
     <g transform="translate(0, ${y})">
-      <path d="${iconPath}" fill="${colors.icon || colors.title}" transform="translate(${iconX}, ${iconY - iconSize/2}) scale(0.8)"/>
-      <text x="${labelX}" y="${labelY}" class="stat-label" fill="${colors.text}" font-family="${fontFamily}" font-size="14">${stat.label}</text>
-      <text x="${valueX}" y="${valueY}" class="stat-value" fill="${colors.title}" font-family="${fontFamily}" font-size="14" text-anchor="end">${stat.value}</text>
+      <path d="${iconPath}" fill="${colors.icon || colors.title}" transform="translate(${iconX}, ${iconTransformY}) scale(0.8)"/>
+      <text x="${labelX}" y="${labelY}" class="stat-label" fill="${colors.text}" font-family="${fontFamily}" font-size="14">${escapeXml(stat.label)}</text>
+      <text x="${valueX}" y="${valueY}" class="stat-value" fill="${colors.title}" font-family="${fontFamily}" font-size="14" text-anchor="end">${escapeXml(stat.value)}</text>
     </g>`;
   });
 

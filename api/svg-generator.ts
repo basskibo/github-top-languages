@@ -6,6 +6,19 @@ export interface Language {
   percent: string;
 }
 
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
 export function generateSVG(
   languages: Language[],
   theme: string | undefined,
@@ -40,7 +53,7 @@ export function generateSVG(
   </defs>
   <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
   <g data-testid="card-title" transform="translate(25, 30)">
-    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${title || 'Top Languages'}</text>
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${escapeXml(title || 'Top Languages')}</text>
   </g>
   <g transform="translate(0, 60)">`;
 
@@ -55,8 +68,8 @@ export function generateSVG(
 
     svg += `
     <g transform="translate(25, ${y})">
-      <text x="0" y="${textY}" class="lang-name" fill="${colors.text}" font-family="${fontFamily}" font-size="13">${lang.name}</text>
-      <text x="${width - 50}" y="${textY}" class="lang-percent" fill="${colors.text}" font-family="${fontFamily}" font-size="13" text-anchor="end">${lang.percent}%</text>
+      <text x="0" y="${textY}" class="lang-name" fill="${colors.text}" font-family="${fontFamily}" font-size="13">${escapeXml(lang.name)}</text>
+      <text x="${width - 50}" y="${textY}" class="lang-percent" fill="${colors.text}" font-family="${fontFamily}" font-size="13" text-anchor="end">${escapeXml(lang.percent)}%</text>
       <rect x="0" y="${barY}" width="${width - 50}" height="${barHeight}" rx="5" fill="${colors.border}" opacity="0.15"/>
       <rect x="0" y="${barY}" width="${barWidth}" height="${barHeight}" rx="5" fill="${color}"/>
     </g>`;
