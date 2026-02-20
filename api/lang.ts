@@ -1,16 +1,19 @@
-const axios = require('axios');
-const GITHUB_API = 'https://api.github.com';
-const generateSVG = require('./svg-generator');
-const THEMES = require('./themes');
+import axios from 'axios';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { generateSVG, Language } from './svg-generator';
+import themes from './themes';
+import { GitHubRepo, LanguageData } from './types';
 
-async function fetchUserRepos(username, token) {
-  const repos = [];
+const GITHUB_API = 'https://api.github.com';
+
+async function fetchUserRepos(username: string, token?: string): Promise<GitHubRepo[]> {
+  const repos: GitHubRepo[] = [];
   let page = 1;
   const perPage = 100;
 
   while (true) {
     try {
-      const response = await axios.get(
+      const response = await axios.get<GitHubRepo[]>(
         `${GITHUB_API}/users/${username}/repos`,
         {
           params: {
@@ -32,7 +35,7 @@ async function fetchUserRepos(username, token) {
 
       if (response.data.length < perPage) break;
       page++;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         throw new Error('User not found');
       }
@@ -43,9 +46,9 @@ async function fetchUserRepos(username, token) {
   return repos;
 }
 
-async function fetchRepoLanguages(owner, repo, token) {
+async function fetchRepoLanguages(owner: string, repo: string, token?: string): Promise<LanguageData> {
   try {
-    const response = await axios.get(
+    const response = await axios.get<LanguageData>(
       `${GITHUB_API}/repos/${owner}/${repo}/languages`,
       {
         headers: token ? { Authorization: `token ${token}` } : {},
@@ -58,8 +61,8 @@ async function fetchRepoLanguages(owner, repo, token) {
   }
 }
 
-function calculateLanguageStats(repos, languagesData) {
-  const totalBytes = {};
+function calculateLanguageStats(repos: GitHubRepo[], languagesData: LanguageData[]): Language[] {
+  const totalBytes: { [key: string]: number } = {};
   let grandTotal = 0;
 
   for (const langData of languagesData) {
@@ -72,7 +75,7 @@ function calculateLanguageStats(repos, languagesData) {
     }
   }
 
-  const percentages = {};
+  const percentages: { [key: string]: number } = {};
   for (const [lang, bytes] of Object.entries(totalBytes)) {
     percentages[lang] = (bytes / grandTotal) * 100;
   }
@@ -87,11 +90,11 @@ function calculateLanguageStats(repos, languagesData) {
   }));
 }
 
-function isValidUsername(username) {
+function isValidUsername(username: string): boolean {
   return /^[a-zA-Z0-9]([a-zA-Z0-9]|-(?![.-])){0,38}$/.test(username);
 }
 
-function createErrorSVG(message) {
+function createErrorSVG(message: string): string {
   return `<svg width="495" height="100" xmlns="http://www.w3.org/2000/svg">
   <rect width="495" height="100" rx="4.5" fill="#fffefe" stroke="#e4e2e2"/>
   <text x="247.5" y="50" text-anchor="middle" fill="#e05d44" font-family="Segoe UI, Verdana, sans-serif" font-size="14">
@@ -100,11 +103,11 @@ function createErrorSVG(message) {
 </svg>`;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     let { username, theme = 'default', hide_border, title, card_width } = req.query;
 
-    if (!username) {
+    if (!username || typeof username !== 'string') {
       res.setHeader('Content-Type', 'image/svg+xml');
       return res.status(400).send(createErrorSVG('Error: Username is required'));
     }
@@ -114,16 +117,17 @@ module.exports = async (req, res) => {
       return res.status(400).send(createErrorSVG('Error: Invalid username format'));
     }
 
-    if (theme) {
+    let normalizedTheme = theme;
+    if (normalizedTheme && typeof normalizedTheme === 'string') {
       try {
-        theme = decodeURIComponent(theme);
+        normalizedTheme = decodeURIComponent(normalizedTheme);
       } catch (e) {
         // If decoding fails, use as is
       }
     }
-    theme = (theme || 'default').toLowerCase().trim();
-    if (!THEMES[theme]) {
-      theme = 'default';
+    normalizedTheme = (normalizedTheme || 'default').toString().toLowerCase().trim();
+    if (!themes[normalizedTheme]) {
+      normalizedTheme = 'default';
     }
 
     const token = process.env.PAT_1 || process.env.GITHUB_TOKEN;
@@ -141,7 +145,7 @@ module.exports = async (req, res) => {
 
     const results = await Promise.allSettled(languagesPromises);
     const languagesData = results
-      .filter(result => result.status === 'fulfilled')
+      .filter((result): result is PromiseFulfilledResult<LanguageData> => result.status === 'fulfilled')
       .map(result => result.value);
 
     const languageStats = calculateLanguageStats(repos, languagesData);
@@ -153,21 +157,21 @@ module.exports = async (req, res) => {
 
     const svg = generateSVG(
       languageStats,
-      theme,
+      normalizedTheme,
       hide_border === 'true',
-      title,
-      card_width ? parseInt(card_width) : undefined
+      typeof title === 'string' ? title : undefined,
+      card_width ? parseInt(card_width.toString()) : undefined
     );
 
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
 
     return res.send(svg);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error);
     
     res.setHeader('Content-Type', 'image/svg+xml');
     return res.status(500).send(createErrorSVG(`Error: ${error.message || 'Something went wrong'}`));
   }
-};
+}
 

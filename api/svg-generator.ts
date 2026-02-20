@@ -1,10 +1,34 @@
-const LANGUAGE_COLORS = require('./language-colors');
-const THEMES = require('./themes');
+import languageColors from './language-colors';
+import themes, { Theme } from './themes';
 
-function generateSVG(languages, theme, hideBorder, title, cardWidth) {
+export interface Language {
+  name: string;
+  percent: string;
+}
+
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+export function generateSVG(
+  languages: Language[],
+  theme: string | undefined,
+  hideBorder: boolean,
+  title: string | undefined,
+  cardWidth: number | undefined
+): string {
   // Normalize theme name and validate
   const normalizedTheme = (theme || 'default').toLowerCase().trim();
-  const colors = THEMES[normalizedTheme] || THEMES.default;
+  const colors: Theme = themes[normalizedTheme] || themes.default;
   const width = cardWidth || 495;
   
   // Improved height calculation with proper padding
@@ -16,8 +40,8 @@ function generateSVG(languages, theme, hideBorder, title, cardWidth) {
   const border = hideBorder ? 0 : 1;
   const borderRadius = 6;
   
-  // Modern font stack
-  const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
+  // Modern font stack - no quotes needed in font-family list
+  const fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans, Helvetica, Arial, sans-serif";
 
   let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -29,13 +53,13 @@ function generateSVG(languages, theme, hideBorder, title, cardWidth) {
   </defs>
   <rect data-testid="card-bg" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${borderRadius}" fill="${colors.bg}" stroke="${colors.border}" stroke-width="${border}"/>
   <g data-testid="card-title" transform="translate(25, 30)">
-    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${title || 'Top Languages'}</text>
+    <text x="0" y="0" class="title" fill="${colors.title}" font-family="${fontFamily}" font-size="20" font-weight="600">${escapeXml(title || 'Top Languages')}</text>
   </g>
   <g transform="translate(0, 60)">`;
 
   languages.forEach((lang, index) => {
     const y = index * itemHeight;
-    const color = LANGUAGE_COLORS[lang.name] || '#858585';
+    const color = languageColors[lang.name] || '#858585';
     const percent = parseFloat(lang.percent);
     const barWidth = ((width - 50) * percent) / 100;
     const barHeight = 10;
@@ -44,8 +68,8 @@ function generateSVG(languages, theme, hideBorder, title, cardWidth) {
 
     svg += `
     <g transform="translate(25, ${y})">
-      <text x="0" y="${textY}" class="lang-name" fill="${colors.text}" font-family="${fontFamily}" font-size="13">${lang.name}</text>
-      <text x="${width - 50}" y="${textY}" class="lang-percent" fill="${colors.text}" font-family="${fontFamily}" font-size="13" text-anchor="end">${lang.percent}%</text>
+      <text x="0" y="${textY}" class="lang-name" fill="${colors.text}" font-family="${fontFamily}" font-size="13">${escapeXml(lang.name)}</text>
+      <text x="${width - 50}" y="${textY}" class="lang-percent" fill="${colors.text}" font-family="${fontFamily}" font-size="13" text-anchor="end">${escapeXml(lang.percent)}%</text>
       <rect x="0" y="${barY}" width="${width - 50}" height="${barHeight}" rx="5" fill="${colors.border}" opacity="0.15"/>
       <rect x="0" y="${barY}" width="${barWidth}" height="${barHeight}" rx="5" fill="${color}"/>
     </g>`;
@@ -58,4 +82,3 @@ function generateSVG(languages, theme, hideBorder, title, cardWidth) {
   return svg;
 }
 
-module.exports = generateSVG;

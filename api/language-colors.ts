@@ -1,6 +1,8 @@
-// This is a simplified list. If a language is not found here,
-// a default gray color will be used.
-module.exports = {
+export interface LanguageColors {
+  [language: string]: string;
+}
+
+const languageColors: LanguageColors = {
   JavaScript: '#f1e05a',
   TypeScript: '#2b7489',
   Python: '#3572A5',
@@ -58,4 +60,6 @@ module.exports = {
   XML: '#000000',
   SQL: '#000000'
 };
+
+export default languageColors;
 

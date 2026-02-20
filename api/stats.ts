@@ -1,17 +1,19 @@
-const axios = require('axios');
-const GITHUB_API = 'https://api.github.com';
-const generateStatsSVG = require('./stats-generator');
-const THEMES = require('./themes');
+import axios from 'axios';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { generateStatsSVG, Stat } from './stats-generator';
+import themes from './themes';
+import { GitHubRepo, GitHubUser, GitHubEvent } from './types';
 
-// Reuse functions from stats.js
-async function fetchUserRepos(username, token) {
-  const repos = [];
+const GITHUB_API = 'https://api.github.com';
+
+async function fetchUserRepos(username: string, token?: string): Promise<GitHubRepo[]> {
+  const repos: GitHubRepo[] = [];
   let page = 1;
   const perPage = 100;
 
   while (true) {
     try {
-      const response = await axios.get(
+      const response = await axios.get<GitHubRepo[]>(
         `${GITHUB_API}/users/${username}/repos`,
         {
           params: {
@@ -33,7 +35,7 @@ async function fetchUserRepos(username, token) {
 
       if (response.data.length < perPage) break;
       page++;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         throw new Error('User not found');
       }
@@ -44,9 +46,9 @@ async function fetchUserRepos(username, token) {
   return repos;
 }
 
-async function fetchUserStats(username, token) {
+async function fetchUserStats(username: string, token?: string): Promise<GitHubUser> {
   try {
-    const response = await axios.get(
+    const response = await axios.get<GitHubUser>(
       `${GITHUB_API}/users/${username}`,
       {
         headers: token ? { Authorization: `token ${token}` } : {},
@@ -54,7 +56,7 @@ async function fetchUserStats(username, token) {
       }
     );
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     if (error.response?.status === 404) {
       throw new Error('User not found');
     }
@@ -62,13 +64,13 @@ async function fetchUserStats(username, token) {
   }
 }
 
-async function fetchUserEvents(username, token) {
-  const events = [];
+async function fetchUserEvents(username: string, token?: string): Promise<GitHubEvent[]> {
+  const events: GitHubEvent[] = [];
   let page = 1;
   const perPage = 100;
 
   try {
-    const response = await axios.get(
+    const response = await axios.get<GitHubEvent[]>(
       `${GITHUB_API}/users/${username}/events/public`,
       {
         params: {
@@ -87,27 +89,35 @@ async function fetchUserEvents(username, token) {
   return events;
 }
 
-function formatNumber(num) {
+function formatNumber(num: number): string {
   if (num >= 1000) {
     return (num / 1000).toFixed(1) + 'k';
   }
   return num.toString();
 }
 
-function calculateStats(repos, userData, events) {
+interface StatsData {
+  stars: number;
+  commits: number;
+  prs: number;
+  issues: number;
+  contributed: number;
+}
+
+function calculateStats(repos: GitHubRepo[], userData: GitHubUser, events: GitHubEvent[]): StatsData {
   const totalStars = repos.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
 
   const totalPRs = events.filter(e => 
     e.type === 'PullRequestEvent' && 
-    (e.payload.action === 'opened' || e.payload.action === 'closed')
+    (e.payload?.action === 'opened' || e.payload?.action === 'closed')
   ).length;
 
   const totalIssues = events.filter(e => 
     e.type === 'IssuesEvent' && 
-    e.payload.action === 'opened'
+    e.payload?.action === 'opened'
   ).length;
 
-  const contributedRepos = new Set();
+  const contributedRepos = new Set<string>();
   events.forEach(event => {
     if (event.repo && event.repo.name) {
       const [owner] = event.repo.name.split('/');
@@ -131,72 +141,44 @@ function calculateStats(repos, userData, events) {
   };
 }
 
-function isValidUsername(username) {
+function isValidUsername(username: string): boolean {
   return /^[a-zA-Z0-9]([a-zA-Z0-9]|-(?![.-])){0,38}$/.test(username);
 }
 
-function createErrorHTML(message) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Error</title>
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="144b22f6-7346-4832-b03d-4cdb44601d97"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #f5f5f5;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .error-container {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      color: #e05d44;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <div class="error-container">
-    <h1>Error</h1>
-    <p>${message}</p>
-  </div>
-</body>
-</html>`;
+function createErrorSVG(message: string): string {
+  return `<svg width="495" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="495" height="100" rx="4.5" fill="#fffefe" stroke="#e4e2e2"/>
+  <text x="247.5" y="50" text-anchor="middle" fill="#e05d44" font-family="Segoe UI, Verdana, sans-serif" font-size="14">
+    ${message}
+  </text>
+</svg>`;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     let { username, theme = 'default', hide_border, title, card_width } = req.query;
 
-    if (!username) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.status(400).send(createErrorHTML('Error: Username is required'));
+    if (!username || typeof username !== 'string') {
+      res.setHeader('Content-Type', 'image/svg+xml');
+      return res.status(400).send(createErrorSVG('Error: Username is required'));
     }
 
     if (!isValidUsername(username)) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.status(400).send(createErrorHTML('Error: Invalid username format'));
+      res.setHeader('Content-Type', 'image/svg+xml');
+      return res.status(400).send(createErrorSVG('Error: Invalid username format'));
     }
 
-    if (theme) {
+    let normalizedTheme = theme;
+    if (normalizedTheme && typeof normalizedTheme === 'string') {
       try {
-        theme = decodeURIComponent(theme);
+        normalizedTheme = decodeURIComponent(normalizedTheme);
       } catch (e) {
         // If decoding fails, use as is
       }
     }
-    theme = (theme || 'default').toLowerCase().trim();
-    if (!THEMES[theme]) {
-      theme = 'default';
+    normalizedTheme = (normalizedTheme || 'default').toString().toLowerCase().trim();
+    if (!themes[normalizedTheme]) {
+      normalizedTheme = 'default';
     }
 
     const token = process.env.PAT_1 || process.env.GITHUB_TOKEN;
@@ -208,13 +190,13 @@ module.exports = async (req, res) => {
     ]);
 
     if (repos.length === 0) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.status(404).send(createErrorHTML('No public repositories found'));
+      res.setHeader('Content-Type', 'image/svg+xml');
+      return res.status(404).send(createErrorSVG('No public repositories found'));
     }
 
     const statsData = calculateStats(repos, userData, events);
 
-    const stats = [
+    const stats: Stat[] = [
       {
         icon: 'stars',
         label: 'Total Stars',
@@ -244,53 +226,21 @@ module.exports = async (req, res) => {
 
     const svg = generateStatsSVG(
       stats,
-      theme,
+      normalizedTheme,
       hide_border === 'true',
-      title || `${username}'s GitHub Stats`,
-      card_width ? parseInt(card_width) : undefined
+      typeof title === 'string' ? title : `${username}'s GitHub Stats`,
+      card_width ? parseInt(card_width.toString()) : undefined
     );
 
-    // Create HTML wrapper with Umami tracking
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GitHub Stats - ${username}</title>
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="144b22f6-7346-4832-b03d-4cdb44601d97"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #f5f5f5;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .svg-container {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-  </style>
-</head>
-<body>
-  <div class="svg-container">
-    ${svg}
-  </div>
-</body>
-</html>`;
-
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
-    return res.send(html);
-  } catch (error) {
+
+    return res.send(svg);
+  } catch (error: any) {
     console.error('Error:', error);
     
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(500).send(createErrorHTML(`Error: ${error.message || 'Something went wrong'}`));
+    res.setHeader('Content-Type', 'image/svg+xml');
+    return res.status(500).send(createErrorSVG(`Error: ${error.message || 'Something went wrong'}`));
   }
-};
+}
+
